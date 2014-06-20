@@ -33,7 +33,7 @@
 #define PULLUPS (BUTTON | P1_4 | P1_5)
 
 
-
+typedef unsigned int UINT;
 
 
 #endif /* HARDWARE_H_ */

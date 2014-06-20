@@ -146,15 +146,16 @@ void open_door(void)
 
  		 P1OUT = RED | PULLUPS;
 
- 		 for(k=1000;k;k--){
- 			for (i=100;i;i--);
- 		 }
+
+ 		 Timer_Set_Delay(5);	//500 ms
+ 		 while(!Timer_Get_Status())
+ 			 ;
+
 
  		 P1OUT = ((RED ^ RED) | PULLUPS);
 
- 		 for(k=1000;k;k--){
- 			for (i=100;i;i--);
- 		 }
+ 		 Timer_Set_Delay(5);
+ 		 while(!Timer_Get_Status());
 
 
  	 }

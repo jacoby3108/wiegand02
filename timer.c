@@ -43,7 +43,7 @@ void CC2_handler(void);
 #define  TIMER_CONTROL (SMCLK | DIV_X_1 | TIM_UP |TIM_INTR_ENABLE)
 
 
-
+static UINT timer;
 
 void init_timer(void)
 {
@@ -55,7 +55,7 @@ void init_timer(void)
 	   TACCR0=10000;  // [en useg @DCO 1Mhz]i.e. 10mseg
 }
 
-
+/************Timer ISR*****************/
 
 #pragma vector=TIMER0_A1_VECTOR
 __interrupt void isr_timer(void)
@@ -88,6 +88,7 @@ __interrupt void isr_timer(void)
 
 
 		default:
+		break;
 
 	}
 
@@ -100,6 +101,9 @@ __interrupt void isr_timer(void)
 void TAOI_handler(void)
 {
 	P1OUT ^= GREEN;
+
+	if (timer)
+		timer--;
 }
 
 
@@ -116,8 +120,19 @@ void CC2_handler(void)
 
 }
 
+/*********End  Timer ISR *************/
+
+/********Timer services for delay ***********/
 
 
+void Timer_Set_Delay(UINT dly) // dly in hundredth of seconds
+{
+	timer=dly*10;
+}
 
+UINT Timer_Get_Status(void)
+{
+	return (!timer);
+}
 
 
