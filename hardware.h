@@ -20,8 +20,8 @@
 // Attached devices
 
 #define  RED  P1_0
-#define  GREEN P1_6
-#define  BUTTON P1_3
+#define  GREEN P1_3
+//#define  BUTTON P1_3   // only on launch pad
 
 #define  WIEGAND_0 P1_4
 #define  WIEGAND_1 P1_5
@@ -30,8 +30,13 @@
 
 #define  LED   RED    // Cambiar aca el color del led RED or GREEN
 
-#define PULLUPS (BUTTON | P1_4 | P1_5)
+//#define PULLUPS (BUTTON | P1_4 | P1_5) // BUTTON era el boton de la placa launchpad P1.3 ahora uso
+/// P1.3 para el led verde que antes estaba en P1.6
+// Hubo quer liberar P1.6 pues lo usa iic
+// ojo no dejar un pullup en una salida la tira abajo
+// Ej si la carga es led serie con 470 ohm cae a 2V en lugar de 3.3v
 
+#define PULLUPS ( P1_4 | P1_5)
 
 typedef unsigned int UINT;
 

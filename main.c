@@ -85,7 +85,9 @@ int main(void) {
 
     P1REN |= PULLUPS;  // Enable Pull up/down resistors (THIS DISABLES SMCLK WHY ???)
 
-    P1IFG &= ~(BUTTON | P1_4 | P1_5); // Clear pending flags
+ //   P1IFG &= ~(BUTTON | P1_4 | P1_5); // Clear pending flags
+    P1IFG &= ~( P1_4 | P1_5); // Clear pending flags
+
     P1IE |= (P1_4 | P1_5);   // Enable P1 Interrupts
 
     lamp=GREEN;
@@ -93,7 +95,7 @@ int main(void) {
     P1OUT = lamp | PULLUPS;
 
 
-
+  testi2c();
     init_wiegand();
    init_timer();
 
