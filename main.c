@@ -21,7 +21,7 @@ unsigned int card_nr;
 unsigned char *itoa(unsigned int num, unsigned char *str, int radix);
 unsigned int search_card(void);
 void open_door(void);
-
+extern unsigned char ready;
 
 #define FOUND 1
 #define NOT_FOUND 0
@@ -95,12 +95,24 @@ int main(void) {
     P1OUT = lamp | PULLUPS;
 
 
-  testi2c();
     init_wiegand();
-   init_timer();
+    init_timer();
+    i2c_init(); // init I2C
 
 
     _BIS_SR(GIE);
+
+    testi2c();
+
+    for(;;){
+
+    	 if (ready==1)
+    		 ready=0;
+
+    }
+
+
+
 
 
 
