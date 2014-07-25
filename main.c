@@ -100,16 +100,16 @@ int main(void) {
     i2c_init(); // init I2C
 
 
-    _BIS_SR(GIE);
+    _BIS_SR(GIE); // Enable General interrupts
 
-    testi2c();
+   // testi2c();
 
-    for(;;){
+   // for(;;){
 
-    	 if (ready==1)
-    		 ready=0;
+    //	 if (ready==1)
+    //		 ready=0;
 
-    }
+    //}
 
 
 
@@ -160,16 +160,15 @@ void open_door(void)
 
  		 P1OUT = RED | PULLUPS;
 
-
- 		 Timer_Set_Delay(5);	//500 ms
- 		 while(!Timer_Get_Status())
+ 		 Timer_Set_Delay(500);	//500 ms
+ 		 while(Timer_Get_Status()!=TIME_OUT)
  			 ;
-
 
  		 P1OUT = ((RED ^ RED) | PULLUPS);
 
- 		 Timer_Set_Delay(5);
- 		 while(!Timer_Get_Status());
+ 		 Timer_Set_Delay(500);  //500ms
+ 		 while(Timer_Get_Status()!=TIME_OUT)
+ 		 			 ;
 
 
  	 }
