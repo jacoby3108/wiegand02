@@ -10,9 +10,10 @@
  */
 
 
-#include "msp430g2553.h"
-#include "iic.h"
+#include <msp430.h>
 #include "hardware.h"
+#include "iic.h"
+#include "timer.h"
 
 // i2c states
 #define WRITE		0x00
@@ -65,6 +66,11 @@ void i2c_trans(u8 size, u8 id, u8 *buffer, u16 address, u8 mode) {
     ready=0;
 }
 
+
+//======================= I2C ISR's ====================================================
+
+// Tx vector
+
 u8 i2c_int(void) {
 
 	if (i2c_data.mode == WRITE_M)			// Write mode state machine
@@ -88,12 +94,12 @@ u8 i2c_int(void) {
         	UCB0TXBUF=*(i2c_data.buffer);
         	i2c_data.state=DONE;
 		}
-		else if(i2c_data.state == DONE)				// End of frame
+		else if(i2c_data.state == DONE)		// End of frame
 		{
-    			UCB0CTL1 |= UCTXSTP; //I2C stop condition
+    			UCB0CTL1 |= UCTXSTP; 		//I2C stop condition
                 while (UCB0CTL1 & UCTXSTP); //Ensure stop condition got sent
-                IFG2 &= ~UCB0TXIFG; //Clear USCI_B0 TX int flag
-                return 1; //Exit LPM0
+                IFG2 &= ~UCB0TXIFG; 		//Clear USCI_B0 TX int flag
+                return 1; 					//Exit LPM0
 		}
 
 		return 0; /// conitune sending the frame
@@ -117,8 +123,8 @@ u8 i2c_int(void) {
 		else if (i2c_data.state == RX_CMD)		// Send RD command
 		{
 
-			P1OUT = ((RED) | PULLUPS);
-			UCB0CTL1 &= ~UCTR; 		// I2C RX
+//*****		P1OUT = ((RED) | PULLUPS);  // for debug
+			UCB0CTL1 &= ~UCTR; 			// I2C RX
 			UCB0CTL1 |= UCTXSTT; 		// I2C repeated Start condition for RX
 			i2c_data.state=RX_DATA;
 
@@ -140,13 +146,13 @@ u8 i2c_int(void) {
 		{
 
 
-			 	UCB0CTL1 |= UCTXSTP ; //I2C stop condition  ( In master rx mode the stop is always preceded by a NACK)
-    	         while (UCB0CTL1 & UCTXSTP); //Ensure stop condition got sent before reading the data
-                IFG2 &= ~UCB0TXIFG; //Clear USCI_B0 TX int flag
-                P1OUT = ((RED ^ RED) | PULLUPS);
-                *(i2c_data.buffer)= UCB0RXBUF;
-                ready=1;
-                return 1; //Exit LPM0
+			 	UCB0CTL1 |= UCTXSTP ; 				//I2C stop condition  ( In master rx mode the stop is always preceded by a NACK)
+    	         while (UCB0CTL1 & UCTXSTP);	 	//Ensure stop condition got sent before reading the data
+                IFG2 &= ~UCB0TXIFG; 				//Clear USCI_B0 TX int flag
+//******        P1OUT = ((RED ^ RED) | PULLUPS);  	// for debug
+                *(i2c_data.buffer)= UCB0RXBUF;   	// Read incoming data
+                ready=1;						 	// Signal that data is available
+                return 1; 							//Exit LPM0
 		}
 
 		return 0; /// conitune sending the frame
@@ -154,7 +160,7 @@ u8 i2c_int(void) {
 
 }
 
-
+// Rx vector ??
 
 u8 i2c_eint(void) {
     if (UCB0STAT & UCNACKIFG) { // send STOP if slave sends NACK
@@ -165,53 +171,7 @@ u8 i2c_eint(void) {
     return 0;
 }
 
-
-/*
- *
- * TEST CODE for iic
- *
- *
- *
- */
-u8 txdata[] = {0xEE, 'E', 'L', 'L', 'O', ' ', 'W', 'O', 'R', 'L', 'D'};
-u8 rxdata[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-int i;
-void testi2c(void) {
-
-
-//   __delay_cycles(20000); //Just a start up delay
-
-	for (i=0;i<=4;i++)
-	WriteEE(&txdata[i],0x1234+i);
-
-	for (i=0;i<=4;i++)
-   ReadEE(&rxdata[i],0x1234+i);
-
-    i=0;
-
-
-
-}
-
-void WriteEE(u8 *pdata,u16 address)
-{
-
-	i2c_trans(1, 0xA0, pdata, address,WRITE_M); //i2c TX 1 byte
-    Timer_Set_Delay(1);	//100 ms
-	 while(!Timer_Get_Status());
-
-}
-
-void ReadEE(u8 *pdata,u16 address)
-{
-
-	i2c_trans(1, 0xA0, pdata, address,READ_M); //i2c RX 1 byte
-
-}
-
-
-
-
+// I2C interrupt vectors
 
 // I2C data transfer vector
 #pragma vector = USCIAB0TX_VECTOR
@@ -234,6 +194,51 @@ __interrupt void USCIAB0RX_ISR(void) {
 }
 
 
+// ======================================================================================
+
+/*===================================
+ *
+ * TEST CODE for iic
+ *
+ *==================================
+ */
+u8 txdata[] = {'H', 'E', 'L', 'L', 'O', ' ', 'W', 'O', 'R', 'L', 'D'};
+u8 rxdata[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int i;
+void testi2c(void) {
+
+
+//   __delay_cycles(20000); //Just a start up delay
+
+	for (i=0;i<=4;i++)
+	WriteEE(&txdata[i],0x1234+i);
+
+	for (i=0;i<=4;i++)
+    ReadEE(&rxdata[i],0x1234+i);
+
+    i=0;
+
+}
+
+
+
+//====================EE SERVICES========================================
+
+void WriteEE(u8 *pdata,u16 address)
+{
+
+	i2c_trans(1, 0xA0, pdata, address,WRITE_M); //i2c TX 1 byte
+    Timer_Set_Delay(10);						//set write EE time
+	while(Timer_Get_Status()!=TIME_OUT);		//Wait Write Time
+
+}
+
+void ReadEE(u8 *pdata,u16 address)
+{
+
+	i2c_trans(1, 0xA0, pdata, address,READ_M); //i2c RX 1 byte
+
+}
 
 
 

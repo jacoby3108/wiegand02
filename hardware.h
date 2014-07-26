@@ -17,10 +17,15 @@
 #define P1_6 (1<<6)
 #define P1_7 (1<<7)
 
-// Attached devices
+// Types definition
 
-#define  RED  P1_0
-#define  GREEN P1_3
+typedef unsigned char u8;
+typedef signed char s8;
+typedef unsigned int u16;
+typedef signed int s16;
+
+
+
 //#define  BUTTON P1_3   // only on launch pad
 
 #define  WIEGAND_0 P1_4
@@ -40,5 +45,7 @@
 
 typedef unsigned int UINT;
 
+#define FALSE 0
+#define TRUE 1
 
 #endif /* HARDWARE_H_ */

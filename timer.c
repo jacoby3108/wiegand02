@@ -1,6 +1,7 @@
 #include <msp430.h>
 #include "hardware.h"
 #include "timer.h"
+#include "led.h"
 
 // Timer hardware definitions
 
@@ -47,9 +48,10 @@ void CC2_handler(void);
 #define T10ms 10000		// Periodic interrupt interval
 
 //==== Driver internal variables and definitions =====
+#define TIMER_ILDE 1
+#define TIMER_IS_RUNNING 2
+#define TIMER_TRIGGERED 3
 
-#define TIMER_TRIGGERED 2
-#define TIMER_ILDE 3
 
 static UINT timer;
 static UINT timer_status;
@@ -122,6 +124,8 @@ void TAOI_handler(void)		// hardware interrupt handler
 			timer_status=TIMER_TRIGGERED; // signal trigger
 	}
 
+	isr_led();
+
 
 }
 
@@ -155,12 +159,13 @@ void CC2_handler(void)
 void Timer_Set_Delay(UINT dly) // dly in milisecons (min 100ms)
 {
 	timer=dly/10;
+	timer_status=TIMER_IS_RUNNING;
 }
 
 /*================================================================================
  * Timer_Get_Status(void) returns the software timer status
  *
- * return values are: TIME_OUT or TIMER_IS_RUNNING (names are self explanatory).
+ * return values are: TIME_OUT or TIMER_IS_BUSY (names are self explanatory).
  *
  * Timer_Get_Status() can be called any time after a Timer_Set_Delay() was issued
  * This function is useful in polled schemas or in main loops.
@@ -169,7 +174,7 @@ void Timer_Set_Delay(UINT dly) // dly in milisecons (min 100ms)
  *
  * 			 if( Timer_Get_Status() == TIME_OUT)
  *
- * 					do_timed tasks();
+ * 					do_ scheduled_tasks();
  *
  *  		 Continue with main loop
  *
@@ -180,16 +185,17 @@ void Timer_Set_Delay(UINT dly) // dly in milisecons (min 100ms)
 UINT Timer_Get_Status(void)
 {
 
-	if(timer_status==TIMER_TRIGGERED)
+	if(timer_status==TIMER_TRIGGERED)  // Has timer elapsed
 	{
 
-		timer_status=TIMER_ILDE;
-		return (TIME_OUT);
+		timer_status=TIMER_ILDE;	  // reset timer status
+		return (TIME_OUT);			  // Inform timer state
 	}
+	else
 
-	return(TIMER_IS_RUNNING);
+	return(TIMER_IS_BUSY);			// Inform timer state
 
-	return(TIMER_IS_ILDE); //???
+
 }
 
 

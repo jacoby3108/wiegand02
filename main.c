@@ -2,6 +2,8 @@
 #include "hardware.h"
 #include "wiegand.h"
 #include "timer.h"
+#include "led.h"
+
 /*
  * main.c v02 test
  */
@@ -57,61 +59,33 @@ int main(void) {
 
     /// P1SEL &=~(BUTTON |GREEN | RED );
 
-//****************Measurement of SMCLK********************************************************
-// if SHOW_SMCLK is enabled (=1) smclk signal is visible on P1.4 useful to measure system clk
-// (WARNING !! if this test is enabled only scope should be connected to  P1.4  )
-#define SHOW_SMCLK 0		// =1 Show System bus clk / =0 Normal I/O operation
-//*****************************************************************************************
-
-
-
-#if SHOW_SMCLK     // show SMCLK on P1.4  (WARNING !! only scope should be connected to  P1.4  )
-
-    P1SEL=IO_FUNCTION | P1_4 ;  // select SMCLK as primary function
-    P1SEL2=IO_FUNCTION;
-    P1DIR |= P1_4;  // P1.4 as output "required"
-    for(;;){}  // Endless loop
-
-#else
-    P1SEL=IO_FUNCTION;
-    P1SEL2=IO_FUNCTION;
-    P1DIR |= (GREEN | RED);
-#endif
-
-
-
     P1IES &= ~ (WIEGAND_0 | WIEGAND_1); //Rising edge
-
 
     P1REN |= PULLUPS;  // Enable Pull up/down resistors (THIS DISABLES SMCLK WHY ???)
 
- //   P1IFG &= ~(BUTTON | P1_4 | P1_5); // Clear pending flags
     P1IFG &= ~( P1_4 | P1_5); // Clear pending flags
 
     P1IE |= (P1_4 | P1_5);   // Enable P1 Interrupts
 
-    lamp=GREEN;
 
-    P1OUT = lamp | PULLUPS;
-
-
+    init_led();
     init_wiegand();
     init_timer();
     i2c_init(); // init I2C
 
 
     _BIS_SR(GIE); // Enable General interrupts
+/*
+   testi2c();
 
-   // testi2c();
+   for(;;){
 
-   // for(;;){
+   	 if (ready==1)
+   		 ready=0;
 
-    //	 if (ready==1)
-    //		 ready=0;
+   }
 
-    //}
-
-
+*/
 
 
 
@@ -154,26 +128,27 @@ void open_door(void)
  volatile int i,k;
  int j=4;
  j=4;
- P1OUT = RED | PULLUPS;
- 	 while(j--)
- 	 {
+ 	 led_on(RED);
+ //	 while(j--)
+ //	 {
 
- 		 P1OUT = RED | PULLUPS;
+ 		// led_on(RED);;
+ 		 flash_led(RED,50,0);
 
- 		 Timer_Set_Delay(500);	//500 ms
+ 		 Timer_Set_Delay(2000);	//500 ms
  		 while(Timer_Get_Status()!=TIME_OUT)
  			 ;
 
- 		 P1OUT = ((RED ^ RED) | PULLUPS);
+ 		led_off(RED);
 
- 		 Timer_Set_Delay(500);  //500ms
- 		 while(Timer_Get_Status()!=TIME_OUT)
+ 		/// Timer_Set_Delay(500);  //500ms
+ 		/// while(Timer_Get_Status()!=TIME_OUT)
  		 			 ;
 
 
- 	 }
+ //	 }
 
- P1OUT = GREEN | PULLUPS;
+
 }
 
 
