@@ -14,6 +14,7 @@
 #include "hardware.h"
 #include "iic.h"
 #include "timer.h"
+#include "led.h"       // just for debug with led lines
 
 // i2c states
 #define WRITE		0x00
@@ -69,7 +70,7 @@ void i2c_trans(u8 size, u8 id, u8 *buffer, u16 address, u8 mode) {
 
 //======================= I2C ISR's ====================================================
 
-// Tx vector
+// USCI B Rx and  Tx vector  & USCI( UART) Tx
 
 u8 i2c_int(void) {
 
@@ -123,7 +124,7 @@ u8 i2c_int(void) {
 		else if (i2c_data.state == RX_CMD)		// Send RD command
 		{
 
-//*****		P1OUT = ((RED) | PULLUPS);  // for debug
+
 			UCB0CTL1 &= ~UCTR; 			// I2C RX
 			UCB0CTL1 |= UCTXSTT; 		// I2C repeated Start condition for RX
 			i2c_data.state=RX_DATA;
@@ -135,8 +136,21 @@ u8 i2c_int(void) {
 
     		// repeated start was send
     	    // now incoming data is being received;
+/*================================================
+
+
+			if(IFG2 & UCB0RXBUF){
+				P1OUT = ((RED) | PULLUPS);  // for debug
+				*(i2c_data.buffer)= UCB0RXBUF;
+				UCB0CTL1 |= UCTXSTP ;
+   	         while (UCB0CTL1 & UCTXSTP);	 	//Ensure stop condition got sent before reading the data
+               IFG2 &= ~UCB0TXIFG; 				//Clear USCI_B0 TX int flag
+               ready=1;
+               }
+//===============================================*/
 
            	 i2c_data.state=DONE;
+
 
 		}
 
@@ -144,14 +158,14 @@ u8 i2c_int(void) {
 		else if(i2c_data.state == DONE)				// End of frame
 
 		{
-
+			     P1OUT = ((RED ^ RED) | PULLUPS);  	// for debug
 
 			 	UCB0CTL1 |= UCTXSTP ; 				//I2C stop condition  ( In master rx mode the stop is always preceded by a NACK)
     	         while (UCB0CTL1 & UCTXSTP);	 	//Ensure stop condition got sent before reading the data
                 IFG2 &= ~UCB0TXIFG; 				//Clear USCI_B0 TX int flag
-//******        P1OUT = ((RED ^ RED) | PULLUPS);  	// for debug
-                *(i2c_data.buffer)= UCB0RXBUF;   	// Read incoming data
-                ready=1;						 	// Signal that data is available
+//            P1OUT = ((RED ^ RED) | PULLUPS);  	// for debug
+               *(i2c_data.buffer)= UCB0RXBUF;   	// Read incoming data
+              ready=1;						 	// Signal that data is available
                 return 1; 							//Exit LPM0
 		}
 
@@ -160,7 +174,7 @@ u8 i2c_int(void) {
 
 }
 
-// Rx vector ??
+// USCI B Flags & USCI A TX (UART)
 
 u8 i2c_eint(void) {
     if (UCB0STAT & UCNACKIFG) { // send STOP if slave sends NACK
@@ -210,11 +224,13 @@ void testi2c(void) {
 
 //   __delay_cycles(20000); //Just a start up delay
 
-	for (i=0;i<=4;i++)
-	WriteEE(&txdata[i],0x1234+i);
+	//for (i=0;i<=4;i++)
+	//WriteEE(&txdata[i],0x1234+i);
 
 	for (i=0;i<=4;i++)
     ReadEE(&rxdata[i],0x1234+i);
+
+//	i2c_trans(4, 0xA0, rxdata, 0x1234,READ_M); //i2c RX 1 byte
 
     i=0;
 

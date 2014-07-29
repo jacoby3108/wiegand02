@@ -73,9 +73,12 @@ int main(void) {
     init_timer();
     i2c_init(); // init I2C
 
+    led_off(RED);
+
+
 
     _BIS_SR(GIE); // Enable General interrupts
-/*
+
    testi2c();
 
    for(;;){
@@ -85,7 +88,7 @@ int main(void) {
 
    }
 
-*/
+
 
 
 
