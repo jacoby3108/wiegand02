@@ -24,14 +24,16 @@ void init_led(void)
 
 #if SHOW_SMCLK     // show SMCLK on P1.4  (WARNING !! only scope should be connected to  P1.4  )
 
-    P1SEL=IO_FUNCTION | P1_4 ;  // select SMCLK as primary function
-    P1SEL2=IO_FUNCTION;
+    P1SEL|=IO_FUNCTION | P1_4 ;  // select SMCLK as primary function
+    P1SEL2|=IO_FUNCTION;
     P1DIR |= P1_4;  // P1.4 as output "required"
     for(;;){}  // Endless loop
 
 #else
-    P1SEL=IO_FUNCTION;				// Primary function as I/O port
-    P1SEL2=IO_FUNCTION;
+
+    P1OUT &= ~(GREEN | RED);
+    P1SEL|=IO_FUNCTION;				// Primary function as I/O port
+    P1SEL2|=IO_FUNCTION;
     P1DIR |= (GREEN | RED);			// set port direction
 #endif
 
@@ -45,15 +47,15 @@ void init_led(void)
 void led_on(u8 ledcolor)
 {
 	 toggle=FALSE;
-	 P1OUT = ledcolor | PULLUPS;
+	 P1OUT |= ledcolor;
 
 }
 
 void led_off(u8 ledcolor)
 {
 
-	toggle=FALSE;
-	 P1OUT = ((ledcolor ^ ledcolor) | PULLUPS);
+	 toggle=FALSE;
+	 P1OUT &= ~ledcolor;
 
 }
 
@@ -114,7 +116,7 @@ void isr_led(void)
 		else						// once the counter reached 0
 		{
 
-			P1OUT = ((led_mask ^ P1OUT) | PULLUPS);		// Toggle led
+			P1OUT ^= led_mask;		// Toggle led
 			flash_counter=flash_interval;				// restore counter
 
 			if(flash_mode == COUNTED )					// if mode is Counted

@@ -115,7 +115,7 @@ __interrupt void isr_timer(void)
 
 void TAOI_handler(void)		// hardware interrupt handler
 {
-	P1OUT ^= GREEN;
+///	P1OUT ^= GREEN;			// for debug
 
 	if (timer){							  // if software timer has not expired
 		timer--;						  // update count

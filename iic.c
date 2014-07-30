@@ -26,7 +26,8 @@
 
 
 #define RX_DATA		0x09
-#define RX_CMD		0x0A
+#define RX_DATA_OK	0x0A
+#define RX_CMD		0x0B
 #define DONE		0xFF
 
 
@@ -37,6 +38,7 @@
 i2c_data_t i2c_data = {0, 0, 0, 0};
 u8 rcvdata;
 u8 ready=0;
+static u8 temp1;
 
 u8 mode=READ_M;
 
@@ -72,7 +74,15 @@ void i2c_trans(u8 size, u8 id, u8 *buffer, u16 address, u8 mode) {
 
 // USCI B Rx and  Tx vector  & USCI( UART) Tx
 
+
+
 u8 i2c_int(void) {
+
+	u8 temp;
+
+
+	P1OUT |= RED;  // for debug
+
 
 	if (i2c_data.mode == WRITE_M)			// Write mode state machine
 	{
@@ -126,47 +136,45 @@ u8 i2c_int(void) {
 
 
 			UCB0CTL1 &= ~UCTR; 			// I2C RX
-			UCB0CTL1 |= UCTXSTT; 		// I2C repeated Start condition for RX
+			UCB0CTL1 |= UCTXSTT; 		// Send I2C repeated Start condition for RX
 			i2c_data.state=RX_DATA;
 
 		}
 
+
+
+
+
 		else if (i2c_data.state == RX_DATA)		// Last repeated start TX Interrupt
 		{
 
-    		// repeated start was send
-    	    // now incoming data is being received;
-/*================================================
+			// Repeated start was send in last state (RX_CMD)
+			// Now incoming data is being received;
+
+			// i2c_data.count holds the amount of data to be read from slave device
+			// therefore the system  stays in this state waits until all data from slave is received
 
 
-			if(IFG2 & UCB0RXBUF){
-				P1OUT = ((RED) | PULLUPS);  // for debug
-				*(i2c_data.buffer)= UCB0RXBUF;
-				UCB0CTL1 |= UCTXSTP ;
-   	         while (UCB0CTL1 & UCTXSTP);	 	//Ensure stop condition got sent before reading the data
-               IFG2 &= ~UCB0TXIFG; 				//Clear USCI_B0 TX int flag
-               ready=1;
-               }
-//===============================================*/
+			P1OUT |= GREEN;  // just for debug
 
-           	 i2c_data.state=DONE;
+				if(i2c_data.count==0)					// No more Data will be needed
+				{
+
+		           	  UCB0CTL1 |= UCTXSTP ;				// Send stop
+		           	  while (UCB0CTL1 & UCTXSTP);	 	// Ensure stop condition got sent before reading the data
+		           	  IFG2 &= ~UCB0TXIFG;				// Clear TX interrupt flag
+		         	  temp= UCB0RXBUF;					// Discard data since Reading UCBxRXBUF resets UCBxRXIFG
+		           	  ready=1;							// Signal Requested data was received
+
+				}
+				else
+				{
+					while(!(IFG2 & UCB0RXIFG));     	// Wait for incoming data in RCV Buffer
+					i2c_data.count--;					// Update counter
+					*(i2c_data.buffer)++= UCB0RXBUF;	// And store Data
+				}
 
 
-		}
-
-
-		else if(i2c_data.state == DONE)				// End of frame
-
-		{
-			     P1OUT = ((RED ^ RED) | PULLUPS);  	// for debug
-
-			 	UCB0CTL1 |= UCTXSTP ; 				//I2C stop condition  ( In master rx mode the stop is always preceded by a NACK)
-    	         while (UCB0CTL1 & UCTXSTP);	 	//Ensure stop condition got sent before reading the data
-                IFG2 &= ~UCB0TXIFG; 				//Clear USCI_B0 TX int flag
-//            P1OUT = ((RED ^ RED) | PULLUPS);  	// for debug
-               *(i2c_data.buffer)= UCB0RXBUF;   	// Read incoming data
-              ready=1;						 	// Signal that data is available
-                return 1; 							//Exit LPM0
 		}
 
 		return 0; /// conitune sending the frame
@@ -194,6 +202,9 @@ __interrupt void USCIAB0TX_ISR(void) {
 
 	i2c_int();
 
+  P1OUT &=~RED;  	// for debug
+  P1OUT &=~GREEN;  	// for debug
+
 //	if (i2c_int()) __bic_SR_register_on_exit(CPUOFF); //Exit LPM0;
 }
 
@@ -216,7 +227,7 @@ __interrupt void USCIAB0RX_ISR(void) {
  *
  *==================================
  */
-u8 txdata[] = {'H', 'E', 'L', 'L', 'O', ' ', 'W', 'O', 'R', 'L', 'D'};
+u8 txdata[] = {'H', 'O', 'L', 'A', '1', '2 ', 'W', 'O', 'R', 'L', 'D'};
 u8 rxdata[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 int i;
 void testi2c(void) {
@@ -224,15 +235,22 @@ void testi2c(void) {
 
 //   __delay_cycles(20000); //Just a start up delay
 
+//	for (i=0;i<=4;i++)
+//	WriteEE(&txdata[i],0x1234+i);
+
 	//for (i=0;i<=4;i++)
-	//WriteEE(&txdata[i],0x1234+i);
+    //ReadEE(&rxdata[i],0x1234+i);
 
-	for (i=0;i<=4;i++)
-    ReadEE(&rxdata[i],0x1234+i);
+     i2c_trans(2, 0xA0, rxdata, 0x1234,READ_M); //i2c RX 1 byte
 
-//	i2c_trans(4, 0xA0, rxdata, 0x1234,READ_M); //i2c RX 1 byte
 
-    i=0;
+	for(;;){
+
+	   	 if (ready==1)
+	   		 ready=0;
+
+	   }
+
 
 }
 

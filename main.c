@@ -28,6 +28,7 @@ extern unsigned char ready;
 #define FOUND 1
 #define NOT_FOUND 0
 int temp;
+unsigned int test16=0x1234;
 
 unsigned int card_table[]= {	24151,
 					35907,
@@ -56,6 +57,7 @@ int main(void) {
     chusma3=DCOCTL;
     chusma4=CALDCO_1MHZ;
 
+    test16++;
 
     /// P1SEL &=~(BUTTON |GREEN | RED );
 
@@ -74,19 +76,13 @@ int main(void) {
     i2c_init(); // init I2C
 
     led_off(RED);
-
+    led_off(GREEN);
 
 
     _BIS_SR(GIE); // Enable General interrupts
 
-   testi2c();
+    testi2c();
 
-   for(;;){
-
-   	 if (ready==1)
-   		 ready=0;
-
-   }
 
 
 
