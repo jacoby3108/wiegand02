@@ -25,16 +25,20 @@ typedef struct {
 } i2c_data_t;
 
 
+// Exported services
+void i2c_trans(u8 size, u8 id, u8 buffer[], u16 address,u8 mode); // IIC service for Reading or writing i2c device
+void i2c_init(void); // setup i2c hardware
+u8 i2c_ready(void ); // Status of i2c for read transfers
 
-void i2c_trans(u8 size, u8 id, u8 buffer[], u16 address,u8 mode);
+// internal functions
+static u8 i2c_int(void); // data transfer interrupt
+static u8 i2c_eint(void); // NACK interrupt
+static void testi2c(void);
 
-void i2c_init(void); // setup
-u8 i2c_int(void); // data transfer interrupt
-u8 i2c_eint(void); // NACK interrupt
-void testi2c(void);
-void WriteEE(u8 *pdata,u16 address);
-void ReadEE(u8 *pdata,u16 address);
 
+//Exported constants
+#define READ_M		0		// Read EEprom memory
+#define WRITE_M		1		// Write EEprom memory
 
 
 

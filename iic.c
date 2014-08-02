@@ -8,7 +8,7 @@
  *
  *
  */
-
+#define DEBUG_I2C FALSE      // Uso pines de los led para debug
 
 #include <msp430.h>
 #include "hardware.h"
@@ -31,14 +31,13 @@
 #define DONE		0xFF
 
 
-#define READ_M		0
-#define WRITE_M		1
+
 
 
 i2c_data_t i2c_data = {0, 0, 0, 0};
 u8 rcvdata;
 u8 ready=0;
-static u8 temp1;
+//////static u8 temp1;
 
 u8 mode=READ_M;
 
@@ -80,9 +79,9 @@ u8 i2c_int(void) {
 
 	u8 temp;
 
-
+#if DEBUG_I2C == TRUE
 	P1OUT |= RED;  // for debug
-
+#endif
 
 	if (i2c_data.mode == WRITE_M)			// Write mode state machine
 	{
@@ -154,9 +153,9 @@ u8 i2c_int(void) {
 			// i2c_data.count holds the amount of data to be read from slave device
 			// therefore the system  stays in this state waits until all data from slave is received
 
-
+#if DEBUG_I2C == TRUE
 			P1OUT |= GREEN;  // just for debug
-
+#endif
 				if(i2c_data.count==0)					// No more Data will be needed
 				{
 
@@ -202,8 +201,13 @@ __interrupt void USCIAB0TX_ISR(void) {
 
 	i2c_int();
 
+
+#if DEBUG_I2C == TRUE
+
   P1OUT &=~RED;  	// for debug
   P1OUT &=~GREEN;  	// for debug
+
+#endif
 
 //	if (i2c_int()) __bic_SR_register_on_exit(CPUOFF); //Exit LPM0;
 }
@@ -218,64 +222,15 @@ __interrupt void USCIAB0RX_ISR(void) {
     }
 }
 
-
-// ======================================================================================
-
-/*===================================
- *
- * TEST CODE for iic
- *
- *==================================
- */
-u8 txdata[] = {'H', 'O', 'L', 'A', '1', '2 ', 'W', 'O', 'R', 'L', 'D'};
-u8 rxdata[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-int i;
-void testi2c(void) {
-
-
-//   __delay_cycles(20000); //Just a start up delay
-
-//	for (i=0;i<=4;i++)
-//	WriteEE(&txdata[i],0x1234+i);
-
-	//for (i=0;i<=4;i++)
-    //ReadEE(&rxdata[i],0x1234+i);
-
-     i2c_trans(2, 0xA0, rxdata, 0x1234,READ_M); //i2c RX 1 byte
-
-
-	for(;;){
-
-	   	 if (ready==1)
-	   		 ready=0;
-
-	   }
-
-
-}
-
-
-
-//====================EE SERVICES========================================
-
-void WriteEE(u8 *pdata,u16 address)
+//==================================
+// Status of i2c for read transfers
+// return value
+// if == 1 means read op has finished
+//==================================
+u8 i2c_ready(void )
 {
-
-	i2c_trans(1, 0xA0, pdata, address,WRITE_M); //i2c TX 1 byte
-    Timer_Set_Delay(10);						//set write EE time
-	while(Timer_Get_Status()!=TIME_OUT);		//Wait Write Time
-
+	return ready;
 }
-
-void ReadEE(u8 *pdata,u16 address)
-{
-
-	i2c_trans(1, 0xA0, pdata, address,READ_M); //i2c RX 1 byte
-
-}
-
-
-
 
 
 

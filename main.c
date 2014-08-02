@@ -3,6 +3,11 @@
 #include "wiegand.h"
 #include "timer.h"
 #include "led.h"
+#include "iic.h"
+#include "EEprom.h"
+#include "fsm.h"
+#include "fsmtable.h"
+#include "cqueue.h"
 
 /*
  * main.c v02 test
@@ -17,20 +22,29 @@ unsigned char card_fc[4];    // 8 bit i.e  3 digit + \0
 unsigned char card_number[6]; //16 bit i.e. 5 digit + \0
 
 unsigned int facility_code;
-unsigned int card_nr;
+// unsigned int card_nr;
 
 
 unsigned char *itoa(unsigned int num, unsigned char *str, int radix);
 unsigned int search_card(void);
-void open_door(void);
-extern unsigned char ready;
+void ProcessEvents(void);
+
+
 
 #define FOUND 1
 #define NOT_FOUND 0
+
+
+
+
 int temp;
 unsigned int test16=0x1234;
+u8 dathi,datlo;
+u8 eve;
 
-unsigned int card_table[]= {	24151,
+
+unsigned int card_table[]= {
+					24151,
 					35907,
 					41255,
 					39447,
@@ -43,7 +57,7 @@ unsigned int card_table[]= {	24151,
 					36859,
 					27102,
 					27111,
-					41880,		// Posta 41881
+					41881,
 					00000		// EOT
 
 				};
@@ -57,7 +71,12 @@ int main(void) {
     chusma3=DCOCTL;
     chusma4=CALDCO_1MHZ;
 
-    test16++;
+
+
+    dathi=(test16>>8)& 0xFF;
+    datlo=((test16)& 0xFF);
+
+
 
     /// P1SEL &=~(BUTTON |GREEN | RED );
 
@@ -78,10 +97,52 @@ int main(void) {
     led_off(RED);
     led_off(GREEN);
 
+    QueueInit();
+	set_init_state(); 	// Inicializo la FSM con el estado inicial
+
 
     _BIS_SR(GIE); // Enable General interrupts
 
-    testi2c();
+ //testi2c();
+
+    while(1)
+    {
+    	ProcessEvents();
+		if (QueueStatus())
+		{
+			eve=PullQueue();
+			store_state(fsm(get_state(),eve));      //Se lo paso a la maquina de estados
+		}
+
+	}
+
+
+
+}
+
+
+//======================================================
+
+    void ProcessEvents(void)
+    {
+
+    unsigned int event;
+    	/* Card Reader Events */
+
+    		if(wiegand_get_status())  // if a card was detected by the card reader
+    		{
+    			event=ParseCard();	  // parse it
+    			PushQueue(event);		 // send to event queue
+    		}
+
+    	/* Timer Events */
+
+    		else if(Timer_Get_Status()==TIME_OUT)
+    		{
+    			event=E_TIME_OUT;
+    			PushQueue(event);;		 // send to event queue
+    		}
+    }
 
 
 
@@ -89,6 +150,13 @@ int main(void) {
 
 
 
+// ============================================================
+
+// OLD TEST Dont delete
+
+
+
+/*
 	for(;;) {
 		volatile unsigned int i;	// volatile to prevent optimization
 
@@ -116,42 +184,13 @@ int main(void) {
 	}
 
 
-
-
-	
 	return 0;
 }
 
-void open_door(void)
-{
- volatile int i,k;
- int j=4;
- j=4;
- 	 led_on(RED);
- //	 while(j--)
- //	 {
+*/
 
- 		// led_on(RED);;
- 		 flash_led(RED,50,0);
-
- 		 Timer_Set_Delay(2000);	//500 ms
- 		 while(Timer_Get_Status()!=TIME_OUT)
- 			 ;
-
- 		led_off(RED);
-
- 		/// Timer_Set_Delay(500);  //500ms
- 		/// while(Timer_Get_Status()!=TIME_OUT)
- 		 			 ;
-
-
- //	 }
-
-
-}
-
-
-unsigned int search_card(void)
+/*
+unsigned int search_card(unsigned int card_nr;)
 {
 int i=0;
 	while (card_table[i])
@@ -164,6 +203,8 @@ int i=0;
 
 	return(NOT_FOUND);
 }
+*/
+
 
 
 /*******************************************************
@@ -173,7 +214,7 @@ int i=0;
 * $Date: 2005/08/31 11:39:47 $                         *
 *******************************************************/
 
-
+/*
 unsigned char *itoa(unsigned int num,unsigned char *str, int radix) {
     char sign = 0;
     char temp[33];  //an int can only be 32 bits long
@@ -216,5 +257,45 @@ unsigned char *itoa(unsigned int num,unsigned char *str, int radix) {
     return str;
 }
 
+*/
 
+// ======================================================================================
+
+/*===================================
+ *
+ * TEST CODE for iic
+ *
+ *==================================
+ */
+u8 txdata[] = {'H', 'O', 'L', 'A', '1', '2 ', 'W', 'O', 'R', 'L', 'D'};
+u8 rxdata[40] = {1, 2, 3};
+int i;
+void testi2c(void) {
+u16 card=0x1234;
+
+//   __delay_cycles(20000); //Just a start up delay
+
+//	for (i=0;i<=4;i++)
+//	WriteEE(&txdata[i],0x1234+i);
+
+	//for (i=0;i<=4;i++)
+    //ReadEE(&rxdata[i],0x1234+i);
+
+	// EE_Clear();
+
+//	EE_Write_Card(0x0000,&card);
+	card=0xABCD;
+	EE_Read_Card(0x0000,&card);
+
+	//i2c_trans(MAX_CARD, 0xA0, rxdata, 0x0000,READ_M); //i2c RX 1 byte
+
+
+	for(;;){
+
+		while (!i2c_ready());	// wait for read operation complete
+		i++;
+	   }
+
+
+}
 

@@ -24,17 +24,7 @@ struct tabla_estado
 // Interfaz
 STATE* fsm(STATE *p_tabla_estado,BYTE evento_actual);
 
+//#define E_UNKNOWN_EVENT	0xFF	 // An Unknown event
 
-// EVENTS
-
-enum events {	E_REGISTERED_CARD,   // Card already in EE table
-				E_UNKOWN_CARD,		 // not an supervisor nor an user card
-				E_ERASE_ALL_CARD,    // Supervisor erase all EE table card
-				E_ERASE_CARD,		 // Supervisor Erase one card from table
-				E_ADD_CARD,			 // Supervisor add one card to table
-				E_NEW_CARD,			 // A new user card ( not present in table)
-				E_TIME_OUT,			 // Time out event due to a timer expiration
-				E_UNKNOWN_EVENT		 // An Unknown event
-};
 
 #endif /* FSM_H_ */
