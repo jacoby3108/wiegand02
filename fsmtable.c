@@ -164,12 +164,13 @@ void erase_table(void)
 	u8 zero=0;
 	int i;
 
-		for(i=0;i<MAX_CARD;i+=2)
+		for(i=0;i<MAX_CARD;i+=2)				// Erase Whole table
 		{
-			WriteEE(&zero,EE_START+i);
+			WriteEE(&zero,EE_START+i);			// Erase HI / LO
 			WriteEE(&zero,EE_START+i+1);
 
 		}
+		flash_led(RED,100,3);					//operation OK feed Back
 }
 
 
@@ -185,10 +186,15 @@ void erase_card(void)
 	if(search_card_table(card_nr,&address)==FOUND) // search for card
 	{
 
-			EE_Write_Card(address,&nullcard);
+			EE_Write_Card(address,&nullcard);		// Card Found erase it
+			led_off(GREEN);
+			flash_led(RED,100,3);					//operation OK feed Back
+	}
+	else
+	{
+			led_off(GREEN);							// stop flashing
 	}
 
-		led_off(GREEN);
 
 
 }
@@ -201,19 +207,29 @@ void add_card(void)
 {
 u16	address,card_nr;
 
+
+	card_nr = wiegand_get_card_number();			// Get card to add
+	if (search_card_table(card_nr,&address)==FOUND) // Check if it is already registered
+	{
+		led_off(GREEN);
+		return;											// If yes nothing to add
+	}
+
+
+	//watch for an empty slot (0x000)
 	if(search_card_table(0x0000,&address)==FOUND) // search for first empty place (0000)
 	{
-		card_nr = wiegand_get_card_number();
-		EE_Write_Card(address,&card_nr);
 
+		EE_Write_Card(address,&card_nr);		  // if found add the new card
 
 	}
 
 	led_off(GREEN);
+	flash_led(RED,100,3);					//operation OK feed Back
 }
 
 
-void blink_led(void)
+void blink_led(void)						// Used to signal that on operation is in progress
 {
 
 	 flash_led(GREEN,50,0);
@@ -221,7 +237,7 @@ void blink_led(void)
 }
 
 
-void do_nothing(void)
+void do_nothing(void)						// Just That :)
 {
 
 	led_off(GREEN);

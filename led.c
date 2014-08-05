@@ -124,8 +124,10 @@ void isr_led(void)
 				if(flash_pulses)						// count down until no more pulses (flashes) are left
 					flash_pulses--;
 				else
+				{
+					P1OUT &= ~led_mask;					// Ensure led remains off when flashing stops
 					toggle=FALSE;						// No more flashes pending  disable toggle mode
-
+				}
 			}
 		}
 	}
