@@ -13,6 +13,7 @@
 #include "wiegand.h"
 #include "timer.h"
 #include "EEprom.h"
+#include "door.h"
 
 
 
@@ -141,7 +142,8 @@ void open_door(void)
 
 	    // LatchKey ON //
 
- 		 flash_led(RED,100,0);
+		OpenDoor();
+ 		flash_led(RED,100,0);
 
  		 Timer_Set_Delay(2000);	//2seg
 // 		 while(Timer_Get_Status()!=TIME_OUT)
@@ -156,6 +158,7 @@ void close_door(void)
 {
 
 	// LatchKey off
+	CloseDoor();
 	led_off(RED);
 }
 

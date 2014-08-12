@@ -8,6 +8,7 @@
 #include "fsm.h"
 #include "fsmtable.h"
 #include "cqueue.h"
+#include "door.h"
 
 /*
  * main.c v02 test
@@ -93,6 +94,7 @@ int main(void) {
     init_wiegand();
     init_timer();
     i2c_init(); // init I2C
+    init_door();
 
     led_off(RED);
     led_off(GREEN);

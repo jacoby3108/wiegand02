@@ -13,10 +13,6 @@
 #ifndef LED_H_
 #define LED_H_
 
-#define  RED   P1_0
-#define  GREEN P1_3
-
-
 #define COUNTED 1
 #define NORMAL 0
 
