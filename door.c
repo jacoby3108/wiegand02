@@ -26,7 +26,7 @@ void init_door(void)
 void OpenDoor(void)
 {
 
-v
+	 P2OUT |= DOOR;
 
 }
 
